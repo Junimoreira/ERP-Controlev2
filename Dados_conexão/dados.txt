@@ -1,0 +1,60 @@
+*********************iniciar projeto no GIT sempre q mudar de máquina****************
+git init
+git remote add origin https://github.com/Junimoreira/controle_financeiro.git
+git add .
+git commit -m "primeira versão" ### FAZENDO O COMMIT
+git branch -M main  #### ENVIA PARA O GIT
+git push -u origin main
+
+
+-----------------------------------------------------------------------------------------
+host: dpg-d7jfb9q8qa3s73aiih4g-a
+
+porta 5432
+
+banco de dados: controlev2
+
+nome de usuário: controlev2_user
+
+senha: ZYlcDCsbPYSHCZeSEYjzXgn5dfRIO7qN
+
+url banco interno: postgresql://controlev2_user:ZYlcDCsbPYSHCZeSEYjzXgn5dfRIO7qN@dpg-d7ofi2e7r5hc73b1jtlg-a/controlev2
+
+banco externo: postgresql://controlev2_user:ZYlcDCsbPYSHCZeSEYjzXgn5dfRIO7qN@dpg-d7ofi2e7r5hc73b1jtlg-a.virginia-postgres.render.com/controlev2
+
+comando psql: PGPASSWORD=ZYlcDCsbPYSHCZeSEYjzXgn5dfRIO7qN psql -h dpg-d7ofi2e7r5hc73b1jtlg-a.virginia-postgres.render.com -U controlev2_user controlev2
+
+
+https://github.com/Junimoreira/controle_financeiro.git
+
+**************************************
+def conectar():
+    return psycopg2.connect(
+        "postgresql://financeiro_db_93s4_user:kem6rdUeGhjKCYShr0qRw24IaZPxNaYT@dpg-d7jfb9q8qa3s73aiih4g-a.oregon-postgres.render.com/financeiro_db_93s4"
+    )
+
+
+****************************************subir alterações para o github**********************************************
+git add .
+git commit -m "add bcrypt"
+git push
+
+
+****************************CRIANDO TABELAS SQL********************************************
+
+
+
+
+*********************CONTA BANCÁRIA*******************
+partir pra controle bancário (saldo, pix, contas) que você comentou
+
+
+*********************
+vamos integrar vendas com banco”
+
+**********************
+Melhorar visual
+
+
+
+

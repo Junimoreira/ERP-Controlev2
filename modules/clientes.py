@@ -65,6 +65,7 @@ def excluir_cliente(id):
 def tela_clientes():
 
     st.title("👤 Clientes")
+    st.caption("Gerencie seus clientes cadastrados")
 
     aba1, aba2 = st.tabs(["Cadastrar", "Lista"])
 

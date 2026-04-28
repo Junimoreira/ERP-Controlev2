@@ -30,6 +30,7 @@ def inserir_produto(nome, preco, estoque):
     with conectar() as conn:
         with conn.cursor() as cur:
 
+            # evitar duplicado
             cur.execute("""
                 SELECT id FROM produtos
                 WHERE LOWER(nome) = LOWER(%s)
@@ -72,6 +73,7 @@ def excluir_produto(id):
 def tela_produtos():
 
     st.title("📦 Produtos")
+    st.caption("Gerencie seus produtos")
 
     aba1, aba2 = st.tabs(["Cadastrar", "Lista"])
 
@@ -82,7 +84,7 @@ def tela_produtos():
 
         with st.form("form_produto", clear_on_submit=True):
 
-            nome = st.text_input("Nome Produto")
+            nome = st.text_input("Nome do Produto")
             preco = st.number_input("Preço", min_value=0.0, format="%.2f")
             estoque = st.number_input("Estoque", min_value=0, step=1)
 
@@ -91,16 +93,16 @@ def tela_produtos():
             if salvar:
 
                 if nome.strip() == "":
-                    st.warning("Informe o nome.")
+                    st.warning("Informe o nome do produto.")
                     st.stop()
 
                 sucesso = inserir_produto(nome, preco, estoque)
 
                 if not sucesso:
-                    st.error("Produto já existe.")
+                    st.error("Já existe produto com esse nome.")
                     st.stop()
 
-                st.success("Produto cadastrado!")
+                st.success("Produto cadastrado com sucesso!")
                 st.rerun()
 
     # ============================
@@ -117,6 +119,11 @@ def tela_produtos():
             columns=["ID", "Nome", "Preço", "Estoque"]
         )
 
+        # formatação de preço
+        df["Preço"] = df["Preço"].apply(
+            lambda x: f"R$ {float(x):.2f}"
+        )
+
         st.dataframe(df, use_container_width=True, hide_index=True)
         st.caption(f"Total: {len(df)}")
 
@@ -128,7 +135,7 @@ def tela_produtos():
         if not df.empty:
 
             prod_id = st.selectbox(
-                "Selecione",
+                "Selecione o produto",
                 df["ID"],
                 format_func=lambda x: f"{x} - {df[df['ID']==x]['Nome'].values[0]}"
             )
@@ -138,7 +145,7 @@ def tela_produtos():
             st.subheader("✏️ Editar Produto")
 
             nome = st.text_input("Nome", value=produto["Nome"])
-            preco = st.number_input("Preço", value=float(produto["Preço"]))
+            preco = st.number_input("Preço", value=float(produto["Preço"].replace("R$ ", "")))
             estoque = st.number_input("Estoque", value=int(produto["Estoque"]))
 
             col1, col2 = st.columns(2)
@@ -147,7 +154,7 @@ def tela_produtos():
             with col1:
                 if st.button("💾 Atualizar"):
                     atualizar_produto(prod_id, nome, preco, estoque)
-                    st.success("Atualizado!")
+                    st.success("Produto atualizado!")
                     st.rerun()
 
             # EXCLUIR
@@ -157,9 +164,9 @@ def tela_produtos():
                 if st.button("🗑️ Excluir"):
 
                     if not confirmar:
-                        st.warning("Confirme antes de excluir!")
+                        st.warning("Confirme antes de excluir.")
                         st.stop()
 
                     excluir_produto(prod_id)
-                    st.warning("Excluído!")
+                    st.warning("Produto excluído!")
                     st.rerun()
