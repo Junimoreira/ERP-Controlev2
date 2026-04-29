@@ -2,171 +2,109 @@ import streamlit as st
 import pandas as pd
 from database.connection import conectar
 
-# ============================
-# FUNÇÕES
-# ============================
-
-def buscar_produtos(nome=""):
-    query = """
-        SELECT id, nome, preco, estoque
-        FROM produtos
-        WHERE 1=1
-    """
-    params = []
-
-    if nome:
-        query += " AND nome ILIKE %s"
-        params.append(f"%{nome}%")
-
-    query += " ORDER BY id DESC"
-
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute(query, params)
-            return cur.fetchall()
-
-
-def inserir_produto(nome, preco, estoque):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-
-            # evitar duplicado
-            cur.execute("""
-                SELECT id FROM produtos
-                WHERE LOWER(nome) = LOWER(%s)
-            """, (nome,))
-
-            if cur.fetchone():
-                return False
-
-            cur.execute("""
-                INSERT INTO produtos (nome, preco, estoque)
-                VALUES (%s,%s,%s)
-            """, (nome, preco, estoque))
-
-            conn.commit()
-            return True
-
-
-def atualizar_produto(id, nome, preco, estoque):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE produtos
-                SET nome=%s, preco=%s, estoque=%s
-                WHERE id=%s
-            """, (nome, preco, estoque, id))
-            conn.commit()
-
-
-def excluir_produto(id):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM produtos WHERE id=%s", (id,))
-            conn.commit()
-
-
-# ============================
-# TELA
-# ============================
 
 def tela_produtos():
 
-    st.title("📦 Produtos")
-    st.caption("Gerencie seus produtos")
+    st.subheader("📦 Cadastro de Produtos")
 
-    aba1, aba2 = st.tabs(["Cadastrar", "Lista"])
+    abas = st.tabs(["➕ Novo Produto", "📋 Lista Produtos"])
 
-    # ============================
-    # CADASTRO
-    # ============================
-    with aba1:
+    # ==================================================
+    # ABA CADASTRO
+    # ==================================================
+    with abas[0]:
 
-        with st.form("form_produto", clear_on_submit=True):
+        with st.form("form_produto"):
 
-            nome = st.text_input("Nome do Produto")
-            preco = st.number_input("Preço", min_value=0.0, format="%.2f")
-            estoque = st.number_input("Estoque", min_value=0, step=1)
+            nome = st.text_input("Nome Produto")
+            codigo = st.text_input("Código de Barras")
+            categoria = st.text_input("Categoria")
 
-            salvar = st.form_submit_button("Salvar Produto")
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                custo = st.number_input("Custo", 0.0, step=0.01)
+
+            with col2:
+                preco = st.number_input("Preço Venda", 0.0, step=0.01)
+
+            with col3:
+                estoque = st.number_input("Estoque Inicial", 0, step=1)
+
+            salvar = st.form_submit_button("💾 Salvar Produto")
 
             if salvar:
 
-                if nome.strip() == "":
-                    st.warning("Informe o nome do produto.")
+                if nome == "":
+                    st.warning("Digite o nome.")
                     st.stop()
 
-                sucesso = inserir_produto(nome, preco, estoque)
+                with conectar() as conn:
+                    with conn.cursor() as cur:
 
-                if not sucesso:
-                    st.error("Já existe produto com esse nome.")
-                    st.stop()
+                        cur.execute("""
+                            INSERT INTO produtos
+                            (nome, codigo_barras, categoria, custo, preco, estoque)
+                            VALUES (%s,%s,%s,%s,%s,%s)
+                        """, (
+                            nome,
+                            codigo,
+                            categoria,
+                            custo,
+                            preco,
+                            estoque
+                        ))
+
+                        conn.commit()
 
                 st.success("Produto cadastrado com sucesso!")
                 st.rerun()
 
-    # ============================
-    # LISTA
-    # ============================
-    with aba2:
+    # ==================================================
+    # ABA LISTAGEM
+    # ==================================================
+    with abas[1]:
 
-        busca = st.text_input("🔍 Buscar produto")
+        busca = st.text_input("🔎 Buscar Produto")
 
-        dados = buscar_produtos(busca)
+        with conectar() as conn:
 
-        df = pd.DataFrame(
-            dados,
-            columns=["ID", "Nome", "Preço", "Estoque"]
+            query = """
+                SELECT id, nome, codigo_barras, categoria,
+                       custo, preco, estoque
+                FROM produtos
+            """
+
+            df = pd.read_sql(query, conn)
+
+        if busca:
+            df = df[df["nome"].str.contains(busca, case=False)]
+
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True
         )
 
-        # formatação de preço
-        df["Preço"] = df["Preço"].apply(
-            lambda x: f"R$ {float(x):.2f}"
-        )
+        # EXCLUIR
+        st.markdown("### 🗑️ Excluir Produto")
 
-        st.dataframe(df, use_container_width=True, hide_index=True)
-        st.caption(f"Total: {len(df)}")
-
-        st.divider()
-
-        # ============================
-        # EDITAR / EXCLUIR
-        # ============================
         if not df.empty:
 
-            prod_id = st.selectbox(
-                "Selecione o produto",
-                df["ID"],
-                format_func=lambda x: f"{x} - {df[df['ID']==x]['Nome'].values[0]}"
+            id_excluir = st.selectbox(
+                "Selecione ID",
+                df["id"]
             )
 
-            produto = df[df["ID"] == prod_id].iloc[0]
+            if st.button("Excluir Produto"):
 
-            st.subheader("✏️ Editar Produto")
+                with conectar() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "DELETE FROM produtos WHERE id=%s",
+                            (id_excluir,)
+                        )
+                        conn.commit()
 
-            nome = st.text_input("Nome", value=produto["Nome"])
-            preco = st.number_input("Preço", value=float(produto["Preço"].replace("R$ ", "")))
-            estoque = st.number_input("Estoque", value=int(produto["Estoque"]))
-
-            col1, col2 = st.columns(2)
-
-            # ATUALIZAR
-            with col1:
-                if st.button("💾 Atualizar"):
-                    atualizar_produto(prod_id, nome, preco, estoque)
-                    st.success("Produto atualizado!")
-                    st.rerun()
-
-            # EXCLUIR
-            with col2:
-                confirmar = st.checkbox("Confirmar exclusão")
-
-                if st.button("🗑️ Excluir"):
-
-                    if not confirmar:
-                        st.warning("Confirme antes de excluir.")
-                        st.stop()
-
-                    excluir_produto(prod_id)
-                    st.warning("Produto excluído!")
-                    st.rerun()
+                st.success("Produto excluído.")
+                st.rerun()

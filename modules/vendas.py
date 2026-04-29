@@ -1,169 +1,151 @@
 import streamlit as st
+import pandas as pd
 from database.connection import conectar
 
-# ============================
-# FUNÇÕES
-# ============================
-
-def buscar_clientes():
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT id, nome FROM clientes ORDER BY nome")
-            return cur.fetchall()
-
-
-def buscar_produtos():
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id, nome, preco, estoque
-                FROM produtos
-                ORDER BY nome
-            """)
-            return cur.fetchall()
-
-
-def registrar_venda(cliente_id, total, desconto, forma, itens):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-
-            cur.execute("""
-                INSERT INTO vendas (cliente_id, total, desconto, forma_pagamento)
-                VALUES (%s,%s,%s,%s)
-                RETURNING id
-            """, (cliente_id, total, desconto, forma))
-
-            venda_id = cur.fetchone()[0]
-
-            for item in itens:
-                cur.execute("""
-                    UPDATE produtos
-                    SET estoque = estoque - %s
-                    WHERE id = %s
-                """, (item["qtd"], item["id"]))
-
-            cur.execute("""
-                INSERT INTO entradas (descricao, valor)
-                VALUES (%s,%s)
-            """, ("Venda", total))
-
-            conn.commit()
-
-
-# ============================
-# TELA
-# ============================
 
 def tela_vendas():
 
-    st.title("💰 Vendas")
+    st.subheader("🛒 Vendas")
 
-    clientes = buscar_clientes()
-    produtos = buscar_produtos()
-
-    clientes_dict = {c[1]: c[0] for c in clientes}
-    produtos_dict = {p[1]: p for p in produtos}
-
-    # ============================
-    # CLIENTE
-    # ============================
-    cliente_nome = st.selectbox(
-        "Cliente",
-        ["Selecione..."] + list(clientes_dict.keys())
-    )
-
-    # ============================
-    # PRODUTO
-    # ============================
-    produto_nome = st.selectbox(
-        "Produto",
-        ["Selecione..."] + list(produtos_dict.keys())
-    )
-
-    quantidade = st.number_input("Quantidade", min_value=1, value=1)
-
-    # ============================
-    # CARRINHO (session_state)
-    # ============================
     if "carrinho" not in st.session_state:
         st.session_state.carrinho = []
 
-    if st.button("➕ Adicionar ao Carrinho"):
+    abas = st.tabs(["🛍 Nova Venda", "📋 Histórico"])
 
-        if produto_nome == "Selecione...":
-            st.warning("Selecione um produto")
-            return
+    # ==================================================
+    # NOVA VENDA
+    # ==================================================
+    with abas[0]:
 
-        produto = produtos_dict[produto_nome]
+        busca = st.text_input("Código de barras ou nome")
 
-        if quantidade > produto[3]:
-            st.error("Estoque insuficiente")
-            return
+        with conectar() as conn:
 
-        st.session_state.carrinho.append({
-            "id": produto[0],
-            "nome": produto[1],
-            "preco": float(produto[2]),
-            "qtd": quantidade
-        })
+            if busca:
 
-        st.success("Produto adicionado!")
+                query = f"""
+                    SELECT id, nome, preco, estoque, codigo_barras
+                    FROM produtos
+                    WHERE nome ILIKE '%{busca}%'
+                    OR codigo_barras ILIKE '%{busca}%'
+                    ORDER BY nome
+                """
 
-    # ============================
-    # MOSTRAR CARRINHO
-    # ============================
-    total = 0
+                df = pd.read_sql(query, conn)
 
-    if st.session_state.carrinho:
+                if not df.empty:
 
-        st.subheader("🛒 Carrinho")
+                    produto = st.selectbox(
+                        "Produto",
+                        df["nome"]
+                    )
 
-        for item in st.session_state.carrinho:
-            subtotal = item["preco"] * item["qtd"]
-            total += subtotal
+                    linha = df[df["nome"] == produto].iloc[0]
 
-            st.write(f"{item['nome']} - {item['qtd']}x = R$ {subtotal:.2f}")
+                    qtd = st.number_input(
+                        "Quantidade",
+                        1,
+                        int(linha["estoque"]),
+                        1
+                    )
 
-    # ============================
-    # PAGAMENTO
-    # ============================
-    desconto = st.number_input("Desconto", min_value=0.0, value=0.0)
+                    if st.button("Adicionar"):
 
-    forma = st.selectbox(
-        "Forma de Pagamento",
-        ["Selecione...", "Dinheiro", "Pix", "Cartão"]
-    )
+                        st.session_state.carrinho.append({
+                            "id": linha["id"],
+                            "nome": linha["nome"],
+                            "preco": float(linha["preco"]),
+                            "qtd": qtd,
+                            "subtotal": float(linha["preco"]) * qtd
+                        })
 
-    total_final = max(total - desconto, 0)
+                        st.success("Produto adicionado")
+                        st.rerun()
 
-    st.metric("Total", f"R$ {total_final:.2f}")
+        # ----------------------------
+        # CARRINHO
+        # ----------------------------
+        st.markdown("### 🧾 Carrinho")
 
-    # ============================
-    # FINALIZAR
-    # ============================
-    if st.button("💾 Finalizar Venda"):
+        if st.session_state.carrinho:
 
-        if cliente_nome == "Selecione...":
-            st.warning("Selecione um cliente")
-            return
+            carrinho = pd.DataFrame(st.session_state.carrinho)
 
-        if not st.session_state.carrinho:
-            st.warning("Carrinho vazio")
-            return
+            st.dataframe(
+                carrinho,
+                use_container_width=True,
+                hide_index=True
+            )
 
-        if forma == "Selecione...":
-            st.warning("Selecione forma de pagamento")
-            return
+            total = carrinho["subtotal"].sum()
 
-        registrar_venda(
-            clientes_dict[cliente_nome],
-            total_final,
-            desconto,
-            forma,
-            st.session_state.carrinho
-        )
+            st.markdown(f"## Total: R$ {total:.2f}")
 
-        st.session_state.carrinho = []
+            forma = st.selectbox(
+                "Forma Pagamento",
+                ["Dinheiro", "PIX", "Cartão"]
+            )
 
-        st.success("Venda concluída!")
-        st.rerun()
+            if st.button("Finalizar Venda"):
+
+                with conectar() as conn:
+                    with conn.cursor() as cur:
+
+                        # salva venda
+                        cur.execute("""
+                            INSERT INTO vendas
+                            (total, forma_pagamento)
+                            VALUES (%s,%s)
+                            RETURNING id
+                        """, (total, forma))
+
+                        venda_id = cur.fetchone()[0]
+
+                        # itens venda
+                        for item in st.session_state.carrinho:
+
+                            cur.execute("""
+                                INSERT INTO itens_venda
+                                (venda_id, produto_id, quantidade,
+                                 preco_unitario, subtotal)
+                                VALUES (%s,%s,%s,%s,%s)
+                            """, (
+                                venda_id,
+                                item["id"],
+                                item["qtd"],
+                                item["preco"],
+                                item["subtotal"]
+                            ))
+
+                            # baixa estoque
+                            cur.execute("""
+                                UPDATE produtos
+                                SET estoque = estoque - %s
+                                WHERE id=%s
+                            """, (
+                                item["qtd"],
+                                item["id"]
+                            ))
+
+                        conn.commit()
+
+                st.success("Venda finalizada!")
+
+                st.session_state.carrinho = []
+
+                st.rerun()
+
+    # ==================================================
+    # HISTÓRICO
+    # ==================================================
+    with abas[1]:
+
+        with conectar() as conn:
+
+            df = pd.read_sql("""
+                SELECT id, data, total, forma_pagamento
+                FROM vendas
+                ORDER BY id DESC
+            """, conn)
+
+        st.dataframe(df, use_container_width=True, hide_index=True)
