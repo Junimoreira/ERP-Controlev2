@@ -37,7 +37,7 @@ def criar_tabelas():
             # CLIENTES
             # ==========================
             cur.execute("""
-                CREATE TABLE clientes (
+                CREATE TABLE IF NOT EXISTS clientes (
                   id SERIAL PRIMARY KEY,
                   tipo TEXT,
                   nome TEXT,
