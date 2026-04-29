@@ -122,8 +122,6 @@ if not st.session_state.logado:
 # -------------------------------------------------
 with st.sidebar:
 
-    with st.sidebar:
-
     st.image("logo.png", width=140)
 
     st.markdown(
