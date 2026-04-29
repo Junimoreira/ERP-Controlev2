@@ -36,16 +36,17 @@ def criar_tabelas():
             # ==========================
             # CLIENTES
             # ==========================
+            cur.execute("DROP TABLE IF EXISTS clientes CASCADE;")
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS clientes (
-                  id SERIAL PRIMARY KEY,
-                  tipo TEXT,
-                  nome TEXT,
-                  documento TEXT,
-                  telefone TEXT,
-                  email TEXT,
-                  endereco TEXT
-                );
+                CREATE TABLE clientes (
+                    id SERIAL PRIMARY KEY,
+                    tipo TEXT,
+                    nome TEXT,
+                    documento TEXT,
+                    telefone TEXT,
+                    email TEXT,
+                    endereco TEXT
+                 );
             """)
 
             # ==========================
@@ -66,6 +67,7 @@ def criar_tabelas():
             # ==========================
             # VENDAS
             # ==========================
+	    cur.execute("DROP TABLE IF EXISTS vendas CASCADE;")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS vendas (
                     id SERIAL PRIMARY KEY,
@@ -79,6 +81,7 @@ def criar_tabelas():
             # ==========================
             # ITENS VENDA
             # ==========================
+	    cur.execute("DROP TABLE IF EXISTS itens_venda CASCADE;")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS itens_venda (
                     id SERIAL PRIMARY KEY,
