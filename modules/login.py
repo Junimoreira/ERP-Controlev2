@@ -5,7 +5,7 @@ from database.connection import conectar
 
 def tela_login():
 
-    st.image("logo.png", use_container_width=True)
+    st.image("logo.png", width=180)
     st.title("🔐 Login")
 
     usuario = st.text_input("Usuário")

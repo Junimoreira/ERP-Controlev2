@@ -29,31 +29,72 @@ st.set_page_config(
 # -------------------------------------------------
 st.markdown("""
 <style>
+
+/* Fundo geral */
 .main {
-    background-color: #f8f9fa;
+    background-color: #f8fafc;
 }
 
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg,#111827,#1f2937);
+/* Sidebar */
+section[data-testid="stSidebar"]{
+    background: linear-gradient(180deg,#07152b,#0b2545);
+    padding-top: 10px;
+    width: 280px !important;
 }
 
-section[data-testid="stSidebar"] * {
-    color: white !important;
+/* Textos sidebar */
+section[data-testid="stSidebar"] *{
+    color:white !important;
 }
 
-.titulo {
-    font-size: 30px;
-    font-weight: bold;
-    color: #111827;
+/* Remove scroll lateral */
+section[data-testid="stSidebar"] > div {
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-.subtitulo {
-    color: gray;
-    margin-top: -10px;
+/* Radio menu */
+div[role="radiogroup"] label{
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    font-size: 18px;
+    transition: 0.2s;
 }
+
+div[role="radiogroup"] label:hover{
+    background: rgba(255,255,255,0.08);
+}
+
+/* Botão sair */
+.stButton button{
+    width:100%;
+    border-radius:12px;
+    height:45px;
+    border:none;
+    background:#2563eb;
+    color:white;
+    font-weight:600;
+}
+
+.stButton button:hover{
+    background:#1d4ed8;
+}
+
+/* Títulos */
+.titulo{
+    font-size:32px;
+    font-weight:700;
+    color:#0f172a;
+}
+
+.subtitulo{
+    color:#64748b;
+    margin-top:-8px;
+}
+
 </style>
 """, unsafe_allow_html=True)
-
 
 # -------------------------------------------------
 # SESSION STATE
@@ -81,16 +122,27 @@ if not st.session_state.logado:
 # -------------------------------------------------
 with st.sidebar:
 
-    st.image("logo.png", use_container_width=True)
-    #st.markdown("Verde Infância")
-    st.markdown("💰Controle Administrativo")
+    with st.sidebar:
+
+    st.image("logo.png", width=140)
+
+    st.markdown(
+        "<h2 style='text-align:center;margin-bottom:0;'>ERP Controle</h2>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        "<p style='text-align:center;color:#94a3b8;'>Sistema Comercial</p>",
+        unsafe_allow_html=True
+    )
+
     st.markdown("---")
-    #st.markdown("---")
 
     st.write(f"👤 {st.session_state.usuario}")
     st.write(f"📅 {datetime.now().strftime('%d/%m/%Y')}")
 
     st.markdown("---")
+
     opcoes = [
         "🏠 Início",
         "👤 Clientes",
