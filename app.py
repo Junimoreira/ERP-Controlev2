@@ -7,7 +7,9 @@ from modules.produtos import tela_produtos
 from modules.vendas import tela_vendas
 from modules.financeiro import tela_financeiro
 #from modules.usuarios import tela_usuarios
+from database.setup import criar_tabelas
 
+criar_tabelas()
 
 # -------------------------------------------------
 # CONFIG INICIAL
