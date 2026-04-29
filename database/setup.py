@@ -109,3 +109,17 @@ def criar_tabelas():
             """)
 
             conn.commit()
+
+            # ==========================
+            # DESPESAS
+            # ==========================
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS despesas (
+                    id SERIAL PRIMARY KEY,
+                    descricao TEXT NOT NULL,
+                    valor NUMERIC(10,2) NOT NULL,
+                    vencimento DATE,
+                    categoria TEXT,
+                    observacao TEXT
+               );
+           """)
