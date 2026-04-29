@@ -7,6 +7,11 @@ def criar_tabelas():
     with conectar() as conn:
         with conn.cursor() as cur:
 
+            # RESET TABELAS RELACIONADAS
+            cur.execute("DROP TABLE IF EXISTS itens_venda CASCADE;")
+            cur.execute("DROP TABLE IF EXISTS vendas CASCADE;")
+            cur.execute("DROP TABLE IF EXISTS clientes CASCADE;")
+
             # ==========================
             # USUÁRIOS
             # ==========================
@@ -36,7 +41,6 @@ def criar_tabelas():
             # ==========================
             # CLIENTES
             # ==========================
-            cur.execute("DROP TABLE IF EXISTS clientes CASCADE;")
             cur.execute("""
                 CREATE TABLE clientes (
                     id SERIAL PRIMARY KEY,
@@ -46,7 +50,7 @@ def criar_tabelas():
                     telefone TEXT,
                     email TEXT,
                     endereco TEXT
-                 );
+                );
             """)
 
             # ==========================
@@ -67,9 +71,8 @@ def criar_tabelas():
             # ==========================
             # VENDAS
             # ==========================
-	    cur.execute("DROP TABLE IF EXISTS vendas CASCADE;")
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS vendas (
+                CREATE TABLE vendas (
                     id SERIAL PRIMARY KEY,
                     cliente_id INTEGER REFERENCES clientes(id),
                     data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -81,9 +84,8 @@ def criar_tabelas():
             # ==========================
             # ITENS VENDA
             # ==========================
-	    cur.execute("DROP TABLE IF EXISTS itens_venda CASCADE;")
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS itens_venda (
+                CREATE TABLE itens_venda (
                     id SERIAL PRIMARY KEY,
                     venda_id INTEGER REFERENCES vendas(id),
                     produto_id INTEGER REFERENCES produtos(id),
