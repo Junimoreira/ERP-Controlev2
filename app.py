@@ -123,12 +123,6 @@ if not st.session_state.logado:
 with st.sidebar:
 
     st.image("logo.png", width=140)
-
-    st.markdown(
-        "<h2 style='text-align:center;margin-bottom:0;'>ERP Controle</h2>",
-        unsafe_allow_html=True
-    )
-
     st.markdown(
         "<p style='text-align:center;color:#94a3b8;'>Sistema Comercial</p>",
         unsafe_allow_html=True
@@ -168,17 +162,17 @@ with st.sidebar:
 # -------------------------------------------------
 # TOPO
 # -------------------------------------------------
-st.markdown(
-    '<p class="titulo">ERP Controle Administrativo</p>',
-    unsafe_allow_html=True
-)
+#st.markdown(
+#    '<p class="titulo">ERP Controle Administrativo</p>',
+#    unsafe_allow_html=True
+#)
 
-st.markdown(
-    '<p class="subtitulo">Sistema de Gestão</p>',
-    unsafe_allow_html=True
-)
+#st.markdown(
+#    '<p class="subtitulo">Sistema de Gestão</p>',
+#    unsafe_allow_html=True
+#)
 
-st.markdown("---")
+#st.markdown("---")
 
 
 # -------------------------------------------------

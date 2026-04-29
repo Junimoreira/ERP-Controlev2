@@ -5,43 +5,72 @@ from database.connection import conectar
 
 def tela_login():
 
-    st.image("logo.png", width=180)
-    st.title("🔐 Login")
+    st.markdown("""
+    <style>
 
-    usuario = st.text_input("Usuário")
-    senha = st.text_input("Senha", type="password")
+    .login-box{
+        max-width:420px;
+        margin:auto;
+        padding-top:40px;
+    }
 
-    if st.button("Entrar", use_container_width=True):
+    .stButton button{
+        width:100%;
+        height:45px;
+        border:none;
+        border-radius:10px;
+        background:#44d62c;
+        color:white;
+        font-size:18px;
+        font-weight:600;
+    }
 
-        with conectar() as conn:
-            with conn.cursor() as cur:
+    .stButton button:hover{
+        background:#35b420;
+    }
 
-                cur.execute(
-                    """
-                    SELECT senha, nivel
-                    FROM usuarios
-                    WHERE usuario=%s
-                    """,
-                    (usuario,)
-                )
+    </style>
+    """, unsafe_allow_html=True)
 
-                resultado = cur.fetchone()
+    with st.container():
 
-                if resultado:
+        st.markdown('<div class="login-box">', unsafe_allow_html=True)
 
-                    senha_hash = resultado[0]
-                    nivel = resultado[1]
+        st.image("logo.png", width=180)
 
-                    if bcrypt.checkpw(
-                        senha.encode(),
-                        senha_hash.encode()
-                    ):
+        st.markdown(
+            "<h1 style='text-align:center;'>Login</h1>",
+            unsafe_allow_html=True
+        )
 
-                        st.session_state.logado = True
-                        st.session_state.usuario = usuario
-                        st.session_state.nivel = nivel
+        usuario = st.text_input("Usuário")
+        senha = st.text_input("Senha", type="password")
 
-                        st.rerun()
-                        return
+        if st.button("Entrar"):
 
-        st.error("Usuário ou senha inválidos")
+            with conectar() as conn:
+                with conn.cursor() as cur:
+
+                    cur.execute(
+                        "SELECT senha FROM usuarios WHERE usuario=%s",
+                        (usuario,)
+                    )
+
+                    resultado = cur.fetchone()
+
+                    if resultado:
+
+                        senha_hash = resultado[0]
+
+                        if bcrypt.checkpw(
+                            senha.encode(),
+                            senha_hash.encode()
+                        ):
+
+                            st.session_state.logado = True
+                            st.session_state.usuario = usuario
+                            st.rerun()
+
+            st.error("Usuário ou senha inválidos")
+
+        st.markdown("</div>", unsafe_allow_html=True)
