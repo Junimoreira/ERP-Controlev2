@@ -8,6 +8,7 @@ from modules.vendas import tela_vendas
 from modules.financeiro import tela_financeiro
 #from modules.usuarios import tela_usuarios
 from database.setup import criar_tabelas
+from modules.estoque import tela_estoque
 
 criar_tabelas()
 
@@ -90,9 +91,10 @@ with st.sidebar:
     opcoes = [
         "🏠 Início",
         "👤 Clientes",
+        "📦 Estoque",
         "📦 Produtos",
         "🛒 Vendas",
-        "📊 Financeiro"
+        "📊 Financeiro",
     ]
 
     #if st.session_state.nivel == "admin":
@@ -142,6 +144,9 @@ elif menu == "🛒 Vendas":
 
 elif menu == "📊 Financeiro":
     tela_financeiro()
+
+elif menu == "📦 Estoque":
+    tela_estoque()
 
 #elif menu == "👥 Usuários":
 #    tela_usuarios()
