@@ -1,6 +1,7 @@
 import streamlit as st
 import bcrypt
-from database import conectar
+#from database import conectar
+from database.connection import conectar
 
 def tela_login():
 
