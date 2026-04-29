@@ -26,32 +26,32 @@ st.set_page_config(
 # -------------------------------------------------
 # CSS
 # -------------------------------------------------
-st.markdown("""
-<style>
-.main {
-    background-color: #f8f9fa;
-}
+#st.markdown("""
+#<style>
+#.main {
+#    background-color: #f8f9fa;
+#}
 
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg,#111827,#1f2937);
-}
+#section[data-testid="stSidebar"] {
+#    background: linear-gradient(180deg,#111827,#1f2937);
+#}
 
-section[data-testid="stSidebar"] * {
-    color: white !important;
-}
+#section[data-testid="stSidebar"] * {
+#    color: white !important;
+#}
 
-.titulo {
-    font-size: 30px;
-    font-weight: bold;
-    color: #111827;
-}
+#.titulo {
+#    font-size: 30px;
+#    font-weight: bold;
+#    color: #111827;
+#}
 
-.subtitulo {
-    color: gray;
-    margin-top: -10px;
-}
-</style>
-""", unsafe_allow_html=True)
+#.subtitulo {
+#    color: gray;
+#    margin-top: -10px;
+#}
+#</style>
+#""", unsafe_allow_html=True)
 
 
 # -------------------------------------------------
