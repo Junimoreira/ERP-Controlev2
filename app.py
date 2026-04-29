@@ -6,7 +6,7 @@ from modules.clientes import tela_clientes
 from modules.produtos import tela_produtos
 from modules.vendas import tela_vendas
 from modules.financeiro import tela_financeiro
-from modules.usuarios import tela_usuarios
+#from modules.usuarios import tela_usuarios
 
 
 # -------------------------------------------------
@@ -93,8 +93,8 @@ with st.sidebar:
         "📊 Financeiro"
     ]
 
-    if st.session_state.nivel == "admin":
-        opcoes.append("👥 Usuários")
+    #if st.session_state.nivel == "admin":
+    #    opcoes.append("👥 Usuários")
 
     menu = st.radio("Menu", opcoes)
 
@@ -141,5 +141,5 @@ elif menu == "🛒 Vendas":
 elif menu == "📊 Financeiro":
     tela_financeiro()
 
-elif menu == "👥 Usuários":
-    tela_usuarios()
+#elif menu == "👥 Usuários":
+#    tela_usuarios()
