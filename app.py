@@ -9,6 +9,7 @@ from modules.financeiro import tela_financeiro
 #from modules.usuarios import tela_usuarios
 from database.setup import criar_tabelas
 from modules.estoque import tela_estoque
+from modules.despesas import tela_despesas
 
 criar_tabelas()
 
@@ -94,6 +95,7 @@ with st.sidebar:
         "📦 Estoque",
         "📦 Produtos",
         "🛒 Vendas",
+        "💸 Despesas",
         "📊 Financeiro",
     ]
 
@@ -147,6 +149,8 @@ elif menu == "📊 Financeiro":
 
 elif menu == "📦 Estoque":
     tela_estoque()
+elif menu == "💸 Despesas":
+    tela_despesas()
 
 #elif menu == "👥 Usuários":
 #    tela_usuarios()
