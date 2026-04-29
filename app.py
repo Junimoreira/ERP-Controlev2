@@ -10,7 +10,7 @@ from modules.financeiro import tela_financeiro
 from database.setup import criar_tabelas
 from modules.estoque import tela_estoque
 
-criar_tabelas()
+#criar_tabelas()
 
 # -------------------------------------------------
 # CONFIG INICIAL
