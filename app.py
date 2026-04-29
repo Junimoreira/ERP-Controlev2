@@ -81,8 +81,13 @@ if not st.session_state.logado:
 # -------------------------------------------------
 with st.sidebar:
 
-    st.markdown("## 💰 ERP Controle")
+    st.image("logo.png", use_container_width=True)
+    #st.markdown("Verde Infância")
+    st.markdown("## 💰 ERP Controle Administrativo")
     st.markdown("---")
+
+    
+    #st.markdown("---")
 
     st.write(f"👤 {st.session_state.usuario}")
     st.write(f"📅 {datetime.now().strftime('%d/%m/%Y')}")
