@@ -17,7 +17,7 @@ criar_tabelas()
 # CONFIG INICIAL
 # -------------------------------------------------
 st.set_page_config(
-    page_title="ERP Controle Administrativo",
+    page_title="Controle Administrativo",
     page_icon="💰",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -83,17 +83,14 @@ with st.sidebar:
 
     st.image("logo.png", use_container_width=True)
     #st.markdown("Verde Infância")
-    st.markdown("## 💰 ERP Controle Administrativo")
+    st.markdown("💰Controle Administrativo")
     st.markdown("---")
-
-    
     #st.markdown("---")
 
     st.write(f"👤 {st.session_state.usuario}")
     st.write(f"📅 {datetime.now().strftime('%d/%m/%Y')}")
 
     st.markdown("---")
-
     opcoes = [
         "🏠 Início",
         "👤 Clientes",
