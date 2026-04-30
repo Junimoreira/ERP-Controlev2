@@ -21,4 +21,4 @@ cur.execute("""
 conn.commit()
 conn.close()
 
-print("✅ Tabela Vendas alterada!")
+print("✅ Tabela Clientes alterada!")
