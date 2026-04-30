@@ -124,15 +124,13 @@ with st.sidebar:
 
     st.image("logo.png", width=140)
     st.markdown(
-        "<p style='text-align:center;color:#94a3b8;'>Sistema Comercial</p>",
+        "<p style='text-align:left;color:#94a3b8;'>Sistema Comercial</p>",
         unsafe_allow_html=True
     )
 
-    st.markdown("---")
-
+    #st.markdown("---")
     st.write(f"👤 {st.session_state.usuario}")
     st.write(f"📅 {datetime.now().strftime('%d/%m/%Y')}")
-
     st.markdown("---")
 
     opcoes = [
