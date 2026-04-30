@@ -2,131 +2,209 @@ import streamlit as st
 import pandas as pd
 from database.connection import conectar
 
-# ============================
-# FUNÇÕES AUXILIARES
-# ============================
 
-def buscar_clientes(nome="", documento=""):
+# =====================================================
+# FUNÇÕES BANCO
+# =====================================================
 
-    query = """
-        SELECT id, tipo, nome, documento, telefone, email, endereco
+def listar_clientes(busca=""):
+
+    sql = """
+        SELECT
+            id,
+            tipo,
+            nome,
+            documento,
+            ie,
+            telefone,
+            whatsapp,
+            email,
+            cep,
+            endereco,
+            numero,
+            bairro,
+            cidade,
+            estado,
+            complemento,
+            ativo
         FROM clientes
         WHERE 1=1
     """
 
     params = []
 
-    if nome:
-        query += " AND nome ILIKE %s"
-        params.append(f"%{nome}%")
+    if busca:
+        sql += """
+            AND (
+                nome ILIKE %s
+                OR documento ILIKE %s
+                OR telefone ILIKE %s
+            )
+        """
+        params.extend([
+            f"%{busca}%",
+            f"%{busca}%",
+            f"%{busca}%"
+        ])
 
-    if documento:
-        query += " AND documento ILIKE %s"
-        params.append(f"%{documento}%")
-
-    query += " ORDER BY id DESC"
+    sql += " ORDER BY nome"
 
     with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute(query, params)
-            return cur.fetchall()
+        return pd.read_sql(sql, conn, params=params)
 
 
-def inserir_cliente(tipo, nome, documento, telefone, email, endereco):
+def inserir_cliente(dados):
 
     with conectar() as conn:
         with conn.cursor() as cur:
 
             cur.execute("""
-                INSERT INTO clientes
-                (tipo, nome, documento, telefone, email, endereco)
-                VALUES (%s,%s,%s,%s,%s,%s)
-            """, (
-                tipo,
-                nome,
-                documento,
-                telefone,
-                email,
-                endereco
-            ))
+                INSERT INTO clientes (
+                    tipo,
+                    nome,
+                    documento,
+                    ie,
+                    telefone,
+                    whatsapp,
+                    email,
+                    cep,
+                    endereco,
+                    numero,
+                    bairro,
+                    cidade,
+                    estado,
+                    complemento,
+                    ativo
+                )
+                VALUES (
+                    %s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s
+                )
+            """, dados)
 
             conn.commit()
 
 
-def atualizar_cliente(id, tipo, nome, documento, telefone, email, endereco):
+def atualizar_cliente(cliente_id, dados):
 
     with conectar() as conn:
         with conn.cursor() as cur:
 
             cur.execute("""
                 UPDATE clientes
-                SET tipo=%s,
+                SET
+                    tipo=%s,
                     nome=%s,
                     documento=%s,
+                    ie=%s,
                     telefone=%s,
+                    whatsapp=%s,
                     email=%s,
-                    endereco=%s
+                    cep=%s,
+                    endereco=%s,
+                    numero=%s,
+                    bairro=%s,
+                    cidade=%s,
+                    estado=%s,
+                    complemento=%s,
+                    ativo=%s
                 WHERE id=%s
-            """, (
-                tipo,
-                nome,
-                documento,
-                telefone,
-                email,
-                endereco,
-                id
-            ))
+            """, (*dados, cliente_id))
 
             conn.commit()
 
 
-def excluir_cliente(id):
+def excluir_cliente(cliente_id):
 
     with conectar() as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM clientes WHERE id=%s", (id,))
+            cur.execute(
+                "DELETE FROM clientes WHERE id=%s",
+                (cliente_id,)
+            )
             conn.commit()
 
 
-# ============================
-# TELA CLIENTES
-# ============================
+# =====================================================
+# TELA
+# =====================================================
 
 def tela_clientes():
 
-    st.title("👤 Clientes")
-    st.caption("Cadastro PF e PJ")
+    st.title("👥 Clientes Premium")
+    st.caption("Cadastro completo integrado ao ERP")
 
-    aba1, aba2 = st.tabs(["➕ Cadastrar", "📋 Lista"])
+    abas = st.tabs([
+        "➕ Novo Cliente",
+        "📋 Consultar / Editar"
+    ])
 
-    # ==================================================
-    # CADASTRAR
-    # ==================================================
-    with aba1:
+    # =====================================================
+    # NOVO CLIENTE
+    # =====================================================
+    with abas[0]:
 
         with st.form("form_cliente", clear_on_submit=True):
 
-            tipo = st.radio(
-                "Tipo Cliente",
-                ["Pessoa Física", "Pessoa Jurídica"],
-                horizontal=True
+            st.markdown("### Dados Principais")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                tipo = st.selectbox(
+                    "Tipo",
+                    ["Pessoa Física", "Pessoa Jurídica"]
+                )
+
+                nome = st.text_input(
+                    "Nome"
+                    if tipo == "Pessoa Física"
+                    else "Razão Social"
+                )
+
+                documento = st.text_input(
+                    "CPF"
+                    if tipo == "Pessoa Física"
+                    else "CNPJ"
+                )
+
+                ie = st.text_input("Inscrição Estadual")
+
+                telefone = st.text_input("Telefone")
+
+            with col2:
+                whatsapp = st.text_input("WhatsApp")
+                email = st.text_input("Email")
+                cep = st.text_input("CEP")
+                endereco = st.text_input("Endereço")
+                numero = st.text_input("Número")
+
+            st.markdown("### Endereço")
+
+            col3, col4, col5 = st.columns(3)
+
+            with col3:
+                bairro = st.text_input("Bairro")
+
+            with col4:
+                cidade = st.text_input("Cidade")
+
+            with col5:
+                estado = st.text_input(
+                    "UF",
+                    max_chars=2
+                )
+
+            complemento = st.text_input("Complemento")
+
+            ativo = st.checkbox(
+                "Cliente Ativo",
+                value=True
             )
 
-            nome = st.text_input(
-                "Nome Completo" if tipo == "Pessoa Física"
-                else "Razão Social"
+            salvar = st.form_submit_button(
+                "💾 Salvar Cliente"
             )
-
-            documento = st.text_input(
-                "CPF" if tipo == "Pessoa Física"
-                else "CNPJ"
-            )
-
-            telefone = st.text_input("Telefone")
-            email = st.text_input("Email")
-            endereco = st.text_area("Endereço")
-
-            salvar = st.form_submit_button("💾 Salvar")
 
             if salvar:
 
@@ -134,48 +212,39 @@ def tela_clientes():
                     st.warning("Informe o nome.")
                     st.stop()
 
-                inserir_cliente(
+                dados = (
                     tipo,
                     nome,
                     documento,
+                    ie,
                     telefone,
+                    whatsapp,
                     email,
-                    endereco
+                    cep,
+                    endereco,
+                    numero,
+                    bairro,
+                    cidade,
+                    estado.upper(),
+                    complemento,
+                    ativo
                 )
 
-                st.success("Cliente cadastrado!")
+                inserir_cliente(dados)
+
+                st.success("Cliente cadastrado com sucesso.")
                 st.rerun()
 
-    # ==================================================
-    # LISTA
-    # ==================================================
-    with aba2:
+    # =====================================================
+    # CONSULTAR
+    # =====================================================
+    with abas[1]:
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-            busca_nome = st.text_input("🔍 Buscar Nome")
-
-        with col2:
-            busca_doc = st.text_input("Buscar CPF/CNPJ")
-
-        dados = buscar_clientes(
-            busca_nome,
-            busca_doc
+        busca = st.text_input(
+            "🔎 Buscar nome, documento ou telefone"
         )
 
-        df = pd.DataFrame(
-            dados,
-            columns=[
-                "ID",
-                "Tipo",
-                "Nome",
-                "Documento",
-                "Telefone",
-                "Email",
-                "Endereço"
-            ]
-        )
+        df = listar_clientes(busca)
 
         st.dataframe(
             df,
@@ -183,85 +252,156 @@ def tela_clientes():
             hide_index=True
         )
 
-        st.caption(f"Total: {len(df)}")
-
-        st.divider()
+        st.caption(f"Total de clientes: {len(df)}")
 
         if not df.empty:
 
             cliente_id = st.selectbox(
                 "Selecione Cliente",
-                df["ID"],
+                df["id"],
                 format_func=lambda x:
-                f"{x} - {df[df['ID']==x]['Nome'].values[0]}"
+                f"{x} - {df[df['id']==x]['nome'].values[0]}"
             )
 
-            cliente = df[df["ID"] == cliente_id].iloc[0]
+            cli = df[df["id"] == cliente_id].iloc[0]
 
-            st.subheader("✏️ Editar Cliente")
-
-            tipo = st.selectbox(
-                "Tipo",
-                ["Pessoa Física", "Pessoa Jurídica"],
-                index=0 if cliente["Tipo"] == "Pessoa Física" else 1
-            )
-
-            nome = st.text_input(
-                "Nome",
-                value=cliente["Nome"]
-            )
-
-            documento = st.text_input(
-                "Documento",
-                value=cliente["Documento"]
-            )
-
-            telefone = st.text_input(
-                "Telefone",
-                value=cliente["Telefone"]
-            )
-
-            email = st.text_input(
-                "Email",
-                value=cliente["Email"]
-            )
-
-            endereco = st.text_area(
-                "Endereço",
-                value=cliente["Endereço"]
-            )
+            st.markdown("---")
+            st.markdown("## ✏️ Editar Cliente")
 
             col1, col2 = st.columns(2)
 
             with col1:
+
+                tipo = st.selectbox(
+                    "Tipo",
+                    ["Pessoa Física", "Pessoa Jurídica"],
+                    index=0 if cli["tipo"] == "Pessoa Física" else 1
+                )
+
+                nome = st.text_input(
+                    "Nome",
+                    value=cli["nome"]
+                )
+
+                documento = st.text_input(
+                    "Documento",
+                    value=cli["documento"]
+                )
+
+                ie = st.text_input(
+                    "IE",
+                    value=cli["ie"]
+                )
+
+                telefone = st.text_input(
+                    "Telefone",
+                    value=cli["telefone"]
+                )
+
+            with col2:
+
+                whatsapp = st.text_input(
+                    "WhatsApp",
+                    value=cli["whatsapp"]
+                )
+
+                email = st.text_input(
+                    "Email",
+                    value=cli["email"]
+                )
+
+                cep = st.text_input(
+                    "CEP",
+                    value=cli["cep"]
+                )
+
+                endereco = st.text_input(
+                    "Endereço",
+                    value=cli["endereco"]
+                )
+
+                numero = st.text_input(
+                    "Número",
+                    value=cli["numero"]
+                )
+
+            col3, col4, col5 = st.columns(3)
+
+            with col3:
+                bairro = st.text_input(
+                    "Bairro",
+                    value=cli["bairro"]
+                )
+
+            with col4:
+                cidade = st.text_input(
+                    "Cidade",
+                    value=cli["cidade"]
+                )
+
+            with col5:
+                estado = st.text_input(
+                    "UF",
+                    value=cli["estado"]
+                )
+
+            complemento = st.text_input(
+                "Complemento",
+                value=cli["complemento"]
+            )
+
+            ativo = st.checkbox(
+                "Ativo",
+                value=cli["ativo"]
+            )
+
+            colb1, colb2 = st.columns(2)
+
+            with colb1:
+
                 if st.button("💾 Atualizar"):
 
-                    atualizar_cliente(
-                        cliente_id,
+                    dados = (
                         tipo,
                         nome,
                         documento,
+                        ie,
                         telefone,
+                        whatsapp,
                         email,
-                        endereco
+                        cep,
+                        endereco,
+                        numero,
+                        bairro,
+                        cidade,
+                        estado.upper(),
+                        complemento,
+                        ativo
                     )
 
-                    st.success("Atualizado!")
+                    atualizar_cliente(
+                        cliente_id,
+                        dados
+                    )
+
+                    st.success("Cliente atualizado.")
                     st.rerun()
 
-            with col2:
+            with colb2:
 
                 confirmar = st.checkbox(
                     "Confirmar exclusão"
                 )
 
-                if st.button("🗑️ Excluir"):
+                if st.button("🗑 Excluir"):
 
                     if not confirmar:
-                        st.warning("Confirme antes.")
+                        st.warning(
+                            "Confirme a exclusão."
+                        )
                         st.stop()
 
                     excluir_cliente(cliente_id)
 
-                    st.warning("Excluído!")
+                    st.warning("Cliente excluído.")
                     st.rerun()

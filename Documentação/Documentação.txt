@@ -1,0 +1,12 @@
+Tabela vendas:
+- cliente
+- data
+- total
+- desconto
+- forma_pagamento
+
+Tabela itens_venda:
+...
+
+Tabela produtos:
+...
