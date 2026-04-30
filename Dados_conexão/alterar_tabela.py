@@ -7,9 +7,15 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 cur.execute("""
-	ALTER TABLE vendas ADD COLUMN IF NOT EXISTS cliente VARCHAR(150);
-        ALTER TABLE vendas ADD COLUMN IF NOT EXISTS desconto NUMERIC(10,2) DEFAULT 0;
-        ALTER TABLE vendas ADD COLUMN IF NOT EXISTS forma_pagamento VARCHAR(50);
+	ALTER TABLE clientes ADD COLUMN ie VARCHAR(30);
+        ALTER TABLE clientes ADD COLUMN whatsapp VARCHAR(20);
+        ALTER TABLE clientes ADD COLUMN cep VARCHAR(10);
+        ALTER TABLE clientes ADD COLUMN numero VARCHAR(20);
+        ALTER TABLE clientes ADD COLUMN bairro VARCHAR(100);
+        ALTER TABLE clientes ADD COLUMN cidade VARCHAR(100);
+        ALTER TABLE clientes ADD COLUMN estado VARCHAR(2);
+        ALTER TABLE clientes ADD COLUMN complemento VARCHAR(150);
+        ALTER TABLE clientes ADD COLUMN ativo BOOLEAN DEFAULT TRUE;
 """)
 
 conn.commit()
