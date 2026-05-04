@@ -35,8 +35,9 @@ def tela_vendas():
                 conn
             )
 
-            cliente_nome = st.selectbox("👤 Cliente", clientes["nome"])
-            cliente_id = clientes[clientes["nome"] == cliente_nome]["id"].values[0]
+            cliente_map = dict(zip(clientes["nome"], clientes["id"]))
+            cliente_nome = st.selectbox("👤 Cliente", list(cliente_map.keys()))
+            cliente_id = cliente_map[cliente_nome]
 
             data_venda = st.date_input("📅 Data", value=date.today())
 
@@ -69,8 +70,13 @@ def tela_vendas():
 
                 if not df.empty:
 
-                    produto = st.selectbox("Produto", df["nome"])
-                    linha = df[df["nome"] == produto].iloc[0]
+                    produto_map = {
+                        f'{row["nome"]} (R$ {row["preco"]:.2f})': row
+                        for _, row in df.iterrows()
+                    }
+
+                    produto_sel = st.selectbox("Produto", list(produto_map.keys()))
+                    linha = produto_map[produto_sel]
 
                     preco = float(linha["preco"])
                     estoque = int(linha["estoque"])
@@ -81,7 +87,7 @@ def tela_vendas():
                         st.info(f"💲 R$ {preco:.2f}")
 
                     with col2:
-                        st.info(f"📦 {estoque}")
+                        st.info(f"📦 Estoque: {estoque}")
 
                     with col3:
                         qtd = st.number_input(
@@ -106,7 +112,7 @@ def tela_vendas():
                                 "subtotal": subtotal
                             })
 
-                            st.success("Adicionado")
+                            st.success("Produto adicionado!")
                             st.rerun()
 
                 else:
@@ -123,14 +129,13 @@ def tela_vendas():
 
             subtotal = carrinho["subtotal"].sum()
 
-            # DESCONTO
             desconto = st.number_input("Desconto (R$)", min_value=0.0)
 
             total = max(subtotal - desconto, 0)
 
             st.markdown(f"Subtotal: R$ {subtotal:.2f}")
             st.markdown(f"Desconto: R$ {desconto:.2f}")
-            st.markdown(f"## Total: R$ {total:.2f}")
+            st.success(f"💰 Total da Venda: R$ {total:.2f}")
 
             # REMOVER ITEM
             nomes = [
@@ -141,7 +146,7 @@ def tela_vendas():
             colr1, colr2 = st.columns([3, 1])
 
             with colr1:
-                item_remover = st.selectbox("Remover", nomes)
+                item_remover = st.selectbox("Remover item", nomes)
 
             with colr2:
                 if st.button("🗑"):
@@ -149,59 +154,70 @@ def tela_vendas():
                     remover_item(indice)
                     st.rerun()
 
-            # FINALIZAR
+            # FINALIZAR VENDA
             if st.button("✅ Finalizar Venda"):
 
                 if total <= 0:
                     st.error("Total inválido")
                     st.stop()
 
-                with conectar() as conn:
-                    with conn.cursor() as cur:
+                try:
+                    with conectar() as conn:
+                        with conn.cursor() as cur:
 
-                        cur.execute("""
-                            INSERT INTO vendas
-                            (cliente_id, data, total, desconto, forma_pagamento)
-                            VALUES (%s,%s,%s,%s,%s)
-                            RETURNING id
-                        """, (
-                            cliente_id,
-                            data_venda,
-                            float(total),
-                            float(desconto),
-                            forma
-                        ))
-
-                        venda_id = cur.fetchone()[0]
-
-                        for item in st.session_state.carrinho:
-
+                            # INSERT VENDA
                             cur.execute("""
-                                INSERT INTO itens_venda
-                                (venda_id, produto_id, quantidade, preco_unitario, subtotal)
+                                INSERT INTO vendas
+                                (cliente_id, data, total, desconto, forma_pagamento)
                                 VALUES (%s,%s,%s,%s,%s)
+                                RETURNING id
                             """, (
-                                venda_id,
-                                item["id"],
-                                item["qtd"],
-                                item["preco"],
-                                item["subtotal"]
+                                cliente_id,
+                                data_venda,
+                                float(total),
+                                float(desconto),
+                                forma
                             ))
 
-                            cur.execute("""
-                                UPDATE produtos
-                                SET estoque = estoque - %s
-                                WHERE id = %s
-                            """, (
-                                item["qtd"],
-                                item["id"]
-                            ))
+                            venda_id = cur.fetchone()[0]
 
-                        conn.commit()
+                            # ITENS + ESTOQUE
+                            for item in st.session_state.carrinho:
 
-                st.success("Venda finalizada!")
-                limpar_carrinho()
-                st.rerun()
+                                cur.execute("""
+                                    INSERT INTO itens_venda
+                                    (venda_id, produto_id, quantidade, preco_unitario, subtotal)
+                                    VALUES (%s,%s,%s,%s,%s)
+                                """, (
+                                    venda_id,
+                                    item["id"],
+                                    item["qtd"],
+                                    item["preco"],
+                                    item["subtotal"]
+                                ))
+
+                                # atualização segura de estoque
+                                cur.execute("""
+                                    UPDATE produtos
+                                    SET estoque = estoque - %s
+                                    WHERE id = %s AND estoque >= %s
+                                """, (
+                                    item["qtd"],
+                                    item["id"],
+                                    item["qtd"]
+                                ))
+
+                                if cur.rowcount == 0:
+                                    raise Exception(f'Estoque insuficiente para {item["nome"]}')
+
+                            conn.commit()
+
+                    st.success("Venda finalizada com sucesso!")
+                    limpar_carrinho()
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"Erro ao finalizar venda: {e}")
 
         else:
             st.info("Carrinho vazio")
@@ -229,6 +245,7 @@ def tela_vendas():
         if not df.empty:
 
             df["data"] = pd.to_datetime(df["data"]).dt.strftime("%d/%m/%Y")
+            df["total"] = df["total"].apply(lambda x: f"R$ {x:.2f}")
 
             st.dataframe(df, use_container_width=True, hide_index=True)
 

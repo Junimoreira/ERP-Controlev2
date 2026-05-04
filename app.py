@@ -15,7 +15,7 @@ def get_conn():
 def get_total_vendas():
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT COALESCE(SUM(valor),0) FROM vendas")
+    cur.execute("SELECT COALESCE(SUM(total),0) FROM vendas")
     total = cur.fetchone()[0]
     conn.close()
     return total
