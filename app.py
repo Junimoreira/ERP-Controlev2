@@ -3,11 +3,11 @@ import psycopg2
 import os
 import pandas as pd
 import streamlit as st
-from telas.login import tela_login
-from telas.vendas import tela_vendas
-from telas.clientes import tela_clientes
-from telas.produtos import tela_produtos
-from telas.dashboard import tela_dashboard
+from modules.login import tela_login
+from modules.vendas import tela_vendas
+from modules.clientes import tela_clientes
+from modules.produtos import tela_produtos
+from modules.dashboard import tela_dashboard
 
 
 st.set_page_config(page_title="Controle Financeiro", layout="wide")
