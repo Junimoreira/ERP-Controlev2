@@ -1,200 +1,131 @@
 import streamlit as st
-from datetime import datetime
-from modules.login import tela_login
-from modules.dashboard import dashboard
-from modules.clientes import tela_clientes
-from modules.produtos import tela_produtos
-from modules.vendas import tela_vendas
-from modules.financeiro import tela_financeiro
-#from modules.usuarios import tela_usuarios
-from database.setup import criar_tabelas
-from modules.estoque import tela_estoque
-from modules.despesas import tela_despesas
+import psycopg2
+import os
+import pandas as pd
 
-criar_tabelas()
+st.set_page_config(page_title="Dashboard ERP", layout="wide")
 
-# -------------------------------------------------
-# CONFIG INICIAL
-# -------------------------------------------------
-st.set_page_config(
-    page_title="Controle Administrativo",
-    page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# ===================== CONEXÃO =====================
+DATABASE_URL = os.getenv("DATABASE_URL")
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
 
+# ===================== CONSULTAS =====================
+def get_total_vendas():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COALESCE(SUM(valor),0) FROM vendas")
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
 
-# -------------------------------------------------
-# CSS
-# -------------------------------------------------
-st.markdown("""
-<style>
+def get_total_produtos():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM produtos")
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
 
-/* Fundo geral */
-.main {
-    background-color: #f8fafc;
-}
+def get_total_clientes():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM clientes")
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
 
-/* Sidebar */
-section[data-testid="stSidebar"]{
-    background: linear-gradient(180deg,#07152b,#0b2545);
-    padding-top: 10px;
-    width: 280px !important;
-}
+def get_estoque_baixo():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM produtos WHERE estoque <= 5")
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
 
-/* Textos sidebar */
-section[data-testid="stSidebar"] *{
-    color:white !important;
-}
+# ===================== UI =====================
+st.set_page_config(page_title="Dashboard ERP", layout="wide")
 
-/* Remove scroll lateral */
-section[data-testid="stSidebar"] > div {
-    overflow-y: auto;
-    overflow-x: hidden;
-}
+st.title("📊 Dashboard ERP Dinâmico")
 
-/* Radio menu */
-div[role="radiogroup"] label{
-    padding: 12px 14px;
-    margin-bottom: 8px;
-    border-radius: 12px;
-    font-size: 18px;
-    transition: 0.2s;
-}
+# ===================== DADOS =====================
+vendas = get_total_vendas()
+produtos = get_total_produtos()
+clientes = get_total_clientes()
+estoque_baixo = get_estoque_baixo()
 
-div[role="radiogroup"] label:hover{
-    background: rgba(255,255,255,0.08);
-}
+# ===================== CARDS =====================
+col1, col2, col3, col4 = st.columns(4)
 
-/* Botão sair */
-.stButton button{
-    width:100%;
-    border-radius:12px;
-    height:45px;
-    border:none;
-    background:#2563eb;
-    color:white;
-    font-weight:600;
-}
+with col1:
+    st.markdown(f"""
+    <div style="
+        background: rgba(255,255,255,0.07);
+        padding: 25px;
+        border-radius: 15px;
+        text-align:center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    ">
+        <h4>💰 Vendas Totais</h4>
+        <h2>R$ {vendas:,.2f}</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-.stButton button:hover{
-    background:#1d4ed8;
-}
+with col2:
+    st.markdown(f"""
+    <div style="
+        background: rgba(255,255,255,0.07);
+        padding: 25px;
+        border-radius: 15px;
+        text-align:center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    ">
+        <h4>📦 Produtos</h4>
+        <h2>{produtos}</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-/* Títulos */
-.titulo{
-    font-size:32px;
-    font-weight:700;
-    color:#0f172a;
-}
+with col3:
+    st.markdown(f"""
+    <div style="
+        background: rgba(255,255,255,0.07);
+        padding: 25px;
+        border-radius: 15px;
+        text-align:center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    ">
+        <h4>👥 Clientes</h4>
+        <h2>{clientes}</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-.subtitulo{
-    color:#64748b;
-    margin-top:-8px;
-}
+with col4:
+    st.markdown(f"""
+    <div style="
+        background: rgba(255,255,255,0.07);
+        padding: 25px;
+        border-radius: 15px;
+        text-align:center;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    ">
+        <h4>⚠️ Estoque Baixo</h4>
+        <h2>{estoque_baixo}</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-</style>
-""", unsafe_allow_html=True)
+def get_dados_curva_abc():
+    conn = get_conn()
+    cur = conn.cursor()
 
-# -------------------------------------------------
-# SESSION STATE
-# -------------------------------------------------
-if "logado" not in st.session_state:
-    st.session_state.logado = False
+    cur.execute("""
+        SELECT nome,
+               SUM(valor_venda * quantidade_vendida) AS faturamento
+        FROM produtos
+        GROUP BY nome
+        ORDER BY faturamento DESC
+    """)
 
-if "usuario" not in st.session_state:
-    st.session_state.usuario = ""
+    dados = cur.fetchall()
+    conn.close()
 
-if "nivel" not in st.session_state:
-    st.session_state.nivel = "usuario"
-
-
-# -------------------------------------------------
-# LOGIN
-# -------------------------------------------------
-if not st.session_state.logado:
-    tela_login()
-    st.stop()
-
-
-# -------------------------------------------------
-# SIDEBAR
-# -------------------------------------------------
-with st.sidebar:
-
-    st.image("logo.png", width=140)
-    st.markdown(
-        "<p style='text-align:left;color:#94a3b8;'>Sistema Comercial</p>",
-        unsafe_allow_html=True
-    )
-
-    #st.markdown("---")
-    st.write(f"👤 {st.session_state.usuario}")
-    st.write(f"📅 {datetime.now().strftime('%d/%m/%Y')}")
-    st.markdown("---")
-
-    opcoes = [
-        "🏠 Início",
-        "👤 Clientes",
-        "📦 Estoque",
-        "📦 Produtos",
-        "🛒 Vendas",
-        "💸 Despesas",
-        "📊 Financeiro",
-    ]
-
-    #if st.session_state.nivel == "admin":
-    #    opcoes.append("👥 Usuários")
-
-    menu = st.radio("Menu", opcoes)
-
-    st.markdown("---")
-
-    if st.button("🚪 Sair", use_container_width=True):
-        st.session_state.logado = False
-        st.session_state.usuario = ""
-        st.session_state.nivel = "usuario"
-        st.rerun()
-
-
-# -------------------------------------------------
-# TOPO
-# -------------------------------------------------
-#st.markdown(
-#    '<p class="titulo">ERP Controle Administrativo</p>',
-#    unsafe_allow_html=True
-#)
-
-#st.markdown(
-#    '<p class="subtitulo">Sistema de Gestão</p>',
-#    unsafe_allow_html=True
-#)
-
-#st.markdown("---")
-
-
-# -------------------------------------------------
-# NAVEGAÇÃO
-# -------------------------------------------------
-if menu == "🏠 Início":
-    dashboard()
-
-elif menu == "👤 Clientes":
-    tela_clientes()
-
-elif menu == "📦 Produtos":
-    tela_produtos()
-
-elif menu == "🛒 Vendas":
-    tela_vendas()
-
-elif menu == "📊 Financeiro":
-    tela_financeiro()
-
-elif menu == "📦 Estoque":
-    tela_estoque()
-elif menu == "💸 Despesas":
-    tela_despesas()
-
-#elif menu == "👥 Usuários":
-#    tela_usuarios()
+    return dados
