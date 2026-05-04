@@ -3,6 +3,16 @@ import pandas as pd
 from database.connection import conectar
 
 
+def get_vendas_mes():
+    with conectar() as conn:
+        df = pd.read_sql("""
+            SELECT COALESCE(SUM(total),0) as total
+            FROM vendas
+            WHERE DATE_TRUNC('month', data) = DATE_TRUNC('month', CURRENT_DATE)
+        """, conn)
+        return float(df["total"][0])
+
+
 def dashboard():
 
     st.title("📊 Dashboard Estratégico")
@@ -10,9 +20,9 @@ def dashboard():
 
     with conectar() as conn:
 
-        # ==========================================
-        # VENDAS DO MÊS
-        # ==========================================
+        # =========================
+        # VENDAS
+        # =========================
         vendas = pd.read_sql("""
             SELECT COALESCE(SUM(total),0) AS total
             FROM vendas
@@ -22,9 +32,9 @@ def dashboard():
 
         total_vendas = float(vendas["total"][0])
 
-        # ==========================================
-        # DESPESAS DO MÊS
-        # ==========================================
+        # =========================
+        # DESPESAS
+        # =========================
         despesas = pd.read_sql("""
             SELECT COALESCE(SUM(valor),0) AS total
             FROM despesas
@@ -34,29 +44,21 @@ def dashboard():
 
         total_despesas = float(despesas["total"][0])
 
-        # ==========================================
-        # PRODUTOS CADASTRADOS
-        # ==========================================
-        produtos = pd.read_sql("""
-            SELECT COUNT(*) AS total
-            FROM produtos
-        """, conn)
-
+        # =========================
+        # PRODUTOS
+        # =========================
+        produtos = pd.read_sql("SELECT COUNT(*) AS total FROM produtos", conn)
         total_produtos = int(produtos["total"][0])
 
-        # ==========================================
-        # CLIENTES CADASTRADOS
-        # ==========================================
-        clientes = pd.read_sql("""
-            SELECT COUNT(*) AS total
-            FROM clientes
-        """, conn)
-
+        # =========================
+        # CLIENTES
+        # =========================
+        clientes = pd.read_sql("SELECT COUNT(*) AS total FROM clientes", conn)
         total_clientes = int(clientes["total"][0])
 
-        # ==========================================
+        # =========================
         # ESTOQUE BAIXO
-        # ==========================================
+        # =========================
         estoque = pd.read_sql("""
             SELECT COUNT(*) AS total
             FROM produtos
@@ -65,103 +67,59 @@ def dashboard():
 
         estoque_baixo = int(estoque["total"][0])
 
-    # ==========================================
+    # =========================
     # CÁLCULOS
-    # ==========================================
+    # =========================
     meta = total_despesas * 1.20
     lucro = total_vendas - total_despesas
     faltam = max(0, meta - total_vendas)
 
-    percentual = 0
-    if meta > 0:
-        percentual = min((total_vendas / meta) * 100, 100)
+    percentual = (total_vendas / meta * 100) if meta > 0 else 0
+    percentual = min(percentual, 100)
 
-    # ==========================================
-    # CARDS PRINCIPAIS
-    # ==========================================
+    # =========================
+    # CARDS
+    # =========================
     col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.metric(
-            "🛒 Vendas do Mês",
-            f"R$ {total_vendas:,.2f}"
-        )
-
-    with col2:
-        st.metric(
-            "💸 Despesas",
-            f"R$ {total_despesas:,.2f}"
-        )
-
-    with col3:
-        st.metric(
-            "💰 Lucro Atual",
-            f"R$ {lucro:,.2f}"
-        )
+    col1.metric("🛒 Vendas do Mês", f"R$ {total_vendas:,.2f}")
+    col2.metric("💸 Despesas", f"R$ {total_despesas:,.2f}")
+    col3.metric("💰 Lucro", f"R$ {lucro:,.2f}")
 
     st.divider()
 
-    # ==========================================
+    # =========================
     # META
-    # ==========================================
+    # =========================
     col1, col2 = st.columns(2)
 
-    with col1:
+    col1.metric("🎯 Meta (+20%)", f"R$ {meta:,.2f}")
+    col1.metric("📉 Falta", f"R$ {faltam:,.2f}")
 
-        st.metric(
-            "🎯 Meta do Mês (+20%)",
-            f"R$ {meta:,.2f}"
-        )
-
-        st.metric(
-            "📉 Falta Vender",
-            f"R$ {faltam:,.2f}"
-        )
-
-    with col2:
-
-        st.metric(
-            "📈 Meta Atingida",
-            f"{percentual:.1f}%"
-        )
-
-        st.progress(percentual / 100)
+    col2.metric("📈 Atingido", f"{percentual:.1f}%")
+    st.progress(percentual / 100)
 
     st.divider()
 
-    # ==========================================
+    # =========================
     # INDICADORES
-    # ==========================================
+    # =========================
     col1, col2, col3 = st.columns(3)
 
-    with col1:
-        st.metric(
-            "📦 Produtos",
-            total_produtos
-        )
-
-    with col2:
-        st.metric(
-            "👤 Clientes",
-            total_clientes
-        )
-
-    with col3:
-        st.metric(
-            "⚠️ Estoque Baixo",
-            estoque_baixo
-        )
+    col1.metric("📦 Produtos", total_produtos)
+    col2.metric("👤 Clientes", total_clientes)
+    col3.metric("⚠️ Estoque Baixo", estoque_baixo)
 
     st.divider()
 
-    # ==========================================
-    # STATUS META
-    # ==========================================
+    # =========================
+    # STATUS
+    # =========================
     if percentual >= 100:
-        st.success("🏆 Meta batida! Excelente resultado.")
+        st.success("🏆 Meta batida!")
     elif percentual >= 80:
-        st.info("🚀 Faltando pouco para bater a meta.")
+        st.info("🚀 Quase lá!")
     elif percentual >= 50:
-        st.warning("⚡ Meta em andamento.")
+        st.warning("⚡ Em andamento")
     else:
-        st.error("🔴 Atenção: vendas abaixo do esperado.")
+        st.error("🔴 Abaixo da meta")

@@ -2,14 +2,69 @@ import streamlit as st
 import psycopg2
 import os
 import pandas as pd
+import streamlit as st
+from telas.login import tela_login
+from telas.vendas import tela_vendas
+from telas.clientes import tela_clientes
+from telas.produtos import tela_produtos
+from telas.dashboard import tela_dashboard
 
-st.set_page_config(page_title="Dashboard ERP", layout="wide")
-st.title("📊 Dashboard ERP Dinâmico")
+
+st.set_page_config(page_title="Controle Financeiro", layout="wide")
+st.title("Controle Financeiro")
 
 # ===================== CONEXÃO =====================
 DATABASE_URL = os.getenv("DATABASE_URL")
 def get_conn():
     return psycopg2.connect(DATABASE_URL)
+
+
+# =========================
+# CONTROLE DE LOGIN
+# =========================
+if "logado" not in st.session_state:
+    st.session_state.logado = False
+
+# =========================
+# LOGIN
+# =========================
+if not st.session_state.logado:
+    tela_login()
+    st.stop()
+
+# =========================
+# MENU LATERAL
+# =========================
+st.sidebar.title("📊 ERP Controle")
+
+menu = st.sidebar.radio(
+    "Navegação",
+    ["Dashboard", "Vendas", "Clientes", "Produtos"]
+)
+
+# =========================
+# LOGOUT
+# =========================
+if st.sidebar.button("🚪 Sair"):
+    st.session_state.logado = False
+    st.rerun()
+
+# =========================
+# TELAS
+# =========================
+if menu == "Dashboard":
+    tela_dashboard()
+
+elif menu == "Vendas":
+    tela_vendas()
+
+elif menu == "Clientes":
+    tela_clientes()
+
+elif menu == "Produtos":
+    tela_produtos()
+
+
 
 # ===================== CONSULTAS =====================
 def get_total_vendas():
