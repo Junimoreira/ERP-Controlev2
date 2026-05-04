@@ -4,6 +4,7 @@ import os
 import pandas as pd
 
 st.set_page_config(page_title="Dashboard ERP", layout="wide")
+st.title("📊 Dashboard ERP Dinâmico")
 
 # ===================== CONEXÃO =====================
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -44,9 +45,9 @@ def get_estoque_baixo():
     return total
 
 # ===================== UI =====================
-st.set_page_config(page_title="Dashboard ERP", layout="wide")
+#st.set_page_config(page_title="Dashboard ERP", layout="wide")
 
-st.title("📊 Dashboard ERP Dinâmico")
+
 
 # ===================== DADOS =====================
 vendas = get_total_vendas()
