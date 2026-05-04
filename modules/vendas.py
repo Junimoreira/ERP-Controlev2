@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from database.connection import conectar
 from datetime import date
+from database.connection import conectar
 
 
 def tela_vendas():
