@@ -7,7 +7,7 @@ from modules.login import tela_login
 from modules.vendas import tela_vendas
 from modules.clientes import tela_clientes
 from modules.produtos import tela_produtos
-from modules.dashboard import tela_dashboard
+from modules.dashboard import dashboard
 
 
 st.set_page_config(page_title="Controle Financeiro", layout="wide")
@@ -53,7 +53,7 @@ if st.sidebar.button("🚪 Sair"):
 # TELAS
 # =========================
 if menu == "Dashboard":
-    tela_dashboard()
+    dashboard()
 
 elif menu == "Vendas":
     tela_vendas()
